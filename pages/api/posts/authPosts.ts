@@ -1,37 +1,33 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
+import prisma from "@/prisma/client";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]";
-import prisma from "../../../prisma/client";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   if (req.method === "GET") {
-    const session = await getServerSession(req, res, authOptions);
-    if (!session)
-      return res.status(401).json({ message: "Please sign-in to make a post" });
-
-    // Create Post
-
     try {
-      const data = await prisma.user.findUnique({
+      console.log(req.query);
+      
+      const data = await prisma.post.findUnique({
         where: {
-          email: session.user?.email,
+          id: req.query.details
         },
         include: {
-          Post: {
+          user: true,
+          Comment: {
             orderBy: {
-              createdAt: "desc",
+              createAt: 'desc'
             },
             include: {
-              Comment: true,
-            },
-          },
-        },
-      });
-      res.status(200).json(data);
+              user: true
+            }
+          }
+        }
+      })
+      return res.status(200).json(data)
     } catch (error) {
       res.status(403).json({ error: "Error has occured while making post" });
     }
